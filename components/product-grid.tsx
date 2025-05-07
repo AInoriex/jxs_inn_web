@@ -53,7 +53,7 @@ export function ProductGrid() {
           return;
         }
 
-        const formattedProducts = data.data.data.map((product: any) => ({
+        const formattedProducts = data.data.result.map((product: any) => ({
           id: product.id.toString(),
           title: product.title,
           description: product.description,

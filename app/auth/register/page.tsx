@@ -3,26 +3,59 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Store } from 'lucide-react';
+import { Store, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { sha256 } from 'js-sha256';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error('两次输入的密码不一致');
+      return;
+    }
     setIsLoading(true);
 
     try {
-      // TODO: Implement registration logic
+      const hashedPassword = sha256(password);
+      const response = await fetch('http://127.0.0.1:32135/v1/eshop_api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'name': name,
+          'email': email,
+          'password': hashedPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('注册失败，请稍后再试');
+      }
+
+      const json_data = await response.json();
+      const err_msg = json_data.msg
+      if (json_data.code !== 0) {
+        throw new Error(err_msg);
+      }
+
       toast.success('注册成功');
       router.push('/auth/login');
     } catch (error) {
-      toast.error('注册失败');
+      // toast.error('注册失败，请稍后重试');
+      toast.error(String(error))
     } finally {
       setIsLoading(false);
     }
@@ -57,29 +90,54 @@ export default function RegisterPage() {
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="name">用户名</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your_email@example.com"
+                id="name"
+                type="text"
+                placeholder=""
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
+              <Label htmlFor="email">邮箱</Label>
               <Input
-                id="password"
-                type="password"
+                id="email"
+                type="email"
+                placeholder=""
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
+            </div>
+            <div className="space-y-2 relative">
+              <Label htmlFor="password">密码</Label>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-8 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
+              </button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">确认密码</Label>
               <Input
                 id="confirmPassword"
                 type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={isLoading}
               />

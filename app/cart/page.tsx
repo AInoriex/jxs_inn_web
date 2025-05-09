@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Minus, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 type CartItem = {
   id: string;
@@ -17,22 +18,37 @@ type CartItem = {
 };
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      title: '地铁.mp3',
-      price: 29.9,
-      quantity: 1,
-      image: 'https://obs-prod-hw-bj-xp-ai-train.obs.cn-north-4.myhuaweicloud.com/QUWAN_DATA/temp_data/%E5%85%B6%E4%BB%96/metro_mp3_cover.jpg',
-      // image: 'https://ucarecdn.com/f58a1bee-1f83-4956-8c05-88e900a387c9/metro_mp3_cover.jpg',
-      // 读取本地图片 .assets\metro_mp3_cover.jpg
-      // image: '/assets/metro_mp3_cover.jpg',
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 0; // Virtual goods, no shipping
-  const total = subtotal + shipping;
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.warning('请登陆后查看');
+      return;
+    }
+
+    const fetchCartItems = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:32135/v1/eshop_api/user/cart/list', {
+          headers: {
+            'Authorization': `${token}`
+          }
+        });
+        const data = await response.json();
+        if (data.code === 0) {
+          setCartItems(data.data.result);
+        }
+      } catch (error) {
+        toast.error('获取购物车失败');
+      }
+    };
+
+    fetchCartItems();
+  }, []);
+
+  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0); // 商品总价
+  const shipping = 0; // 运费
+  const total = subtotal + shipping; // 最终金额
 
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;

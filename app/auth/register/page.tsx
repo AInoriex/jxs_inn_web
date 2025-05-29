@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { sha256 } from 'js-sha256';
+import { useAuth } from '@/lib/auth'; // 导入auth方法
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth(); // 获取auth的register方法
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,33 +31,14 @@ export default function RegisterPage() {
 
     try {
       const hashedPassword = sha256(password);
-      const response = await fetch('http://127.0.0.1:32135/v1/eshop_api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          'name': name,
-          'email': email,
-          'password': hashedPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('注册失败，请稍后再试');
-      }
-
-      const json_data = await response.json();
-      const err_msg = json_data.msg
-      if (json_data.code !== 0) {
-        throw new Error(err_msg);
-      }
-
+      await register(name, email, hashedPassword); 
       toast.success('注册成功');
+      // 等待2秒
+      await new Promise(resolve => setTimeout(resolve, 2000));
       router.push('/auth/login');
     } catch (error) {
-      // toast.error('注册失败，请稍后重试');
-      toast.error(String(error))
+      toast.error('注册失败，请稍后重试');
+      // toast.error(String(error))
     } finally {
       setIsLoading(false);
     }

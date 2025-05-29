@@ -13,7 +13,7 @@ import { sha256 } from 'js-sha256';
 
 export default function LoginPage() {
   const router = useRouter();
-  // const { login } = useAuth();
+  const { login, checkAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,38 +25,14 @@ export default function LoginPage() {
 
     try {
       const hashedPassword = sha256(password);
-      const response = await fetch('http://127.0.0.1:32135/v1/eshop_api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          'email': email,
-          'password': hashedPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('登录失败，请稍后再试');
-      }
-
-      const json_data = await response.json();
-      const err_msg = json_data.msg
-      if (json_data.code !== 0) {
-        throw new Error(err_msg);
-      }
-
-      const token_type = json_data.data.token_type;
-      const access_token = json_data.data.access_token;
-      if (token_type === '' || access_token === '') {
-        throw new Error('系统繁忙，请稍后再试');
-      }
-      localStorage.setItem('token', token_type + ' ' + access_token);
+      // 调用auth的login方法
+      await login(email, hashedPassword); 
+      // 等待用户状态同步完成
+      await checkAuth(); 
       toast.success('登录成功');
       router.push('/');
     } catch (error) {
-      // toast.error('登录失败，请检查您的邮箱和密码');
-      toast.error(String(error))
+      toast.error(String(error));
     } finally {
       setIsLoading(false);
     }

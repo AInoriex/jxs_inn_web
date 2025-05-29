@@ -44,7 +44,7 @@ export const useAuth = create<AuthStore>()(
           const loginData = await loginRes.json();
           if (loginData.code !== 0) throw new Error(loginData.msg || '登录失败');
 
-          // 2. 存储token到localStorage（格式："Bearer <token>"）
+          // 2. 存储token到localStorage
           const token = `${loginData.data.token_type} ${loginData.data.access_token}`;
           localStorage.setItem('token', token);
 
@@ -81,7 +81,7 @@ export const useAuth = create<AuthStore>()(
         set({ user: null });
       },
 
-      // 新增：注册逻辑（调用注册接口）
+      // 注册逻辑（调用注册接口）
       register: async (name: string, email: string, password: string) => {
         try {
           const registerRes = await fetch(`${API_BASE_URL}/v1/eshop_api/auth/register`, {

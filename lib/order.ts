@@ -46,10 +46,10 @@ export class OrderService {
     });
 
     if (!res.ok) throw new Error('创建订单请求失败');
-    const json_data = await res.json();
-    if (json_data.code !== 0) throw new Error(json_data.msg || '创建订单失败');
+    const jsonData = await res.json();
+    if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建订单失败');
 
-    return json_data.data.order_id;
+    return jsonData.data.order_id;
   }
 
   /**
@@ -66,13 +66,13 @@ export class OrderService {
     });
 
     if (!res.ok) throw new Error('获取订单状态请求失败');
-    const json_data = await res.json();
-    if (json_data.code !== 0) throw new Error(json_data.msg || '获取订单状态失败');
+    const jsonData = await res.json();
+    if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取订单状态失败');
 
     return {
-      orderId: json_data.data.order_id,
-      status: json_data.data.status,
-      statusText: json_data.data.status_text
+      orderId: jsonData.data.order_id,
+      status: jsonData.data.status,
+      statusText: jsonData.data.status_text
     };
   }
 }

@@ -38,13 +38,13 @@ export class CartService {
     });
 
     if (!res.ok) throw new Error('获取购物车列表请求失败');
-    const json_data = await res.json();
-    if (json_data.code !== 0) throw new Error(json_data.msg || '获取购物车列表失败');
+    const jsonData = await res.json();
+    if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取购物车列表失败');
 
     // 打日志
-    console.log('CartService.getList: ', json_data.data);
-    console.log('CartService.getList.result: ', json_data.data.result);
-    return json_data.data.result;
+    console.log('CartService.getList: ', jsonData.data);
+    console.log('CartService.getList.result: ', jsonData.data.result);
+    return jsonData.data.result;
   }
 
   /**
@@ -69,10 +69,10 @@ export class CartService {
     });
 
     if (!res.ok) throw new Error('创建购物车项请求失败');
-    const json_data = await res.json();
-    if (json_data.code !== 0) throw new Error(json_data.msg || '创建购物车项失败');
+    const jsonData = await res.json();
+    if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建购物车项失败');
 
-    return json_data.data.cart_item_id;
+    return jsonData.data.cart_item_id;
   }
 
   /**
@@ -93,7 +93,7 @@ export class CartService {
     });
 
     if (!res.ok) throw new Error('移除购物车项请求失败');
-    const json_data = await res.json();
-    if (json_data.code !== 0) throw new Error(json_data.msg || '移除购物车项失败');
+    const jsonData = await res.json();
+    if (jsonData.code !== 0) throw new Error(jsonData.msg || '移除购物车项失败');
   }
 }

@@ -40,7 +40,7 @@ export class InventoryService {
   }
 
   /**
-   * 获取流媒体文件（m3u8索引或.ts分片）
+   * 获取流媒体文件二进制流（m3u8索引或.ts分片）
    * @param filename 流媒体文件名（含扩展名）
    * @returns Blob类型的文件内容
    */
@@ -54,5 +54,14 @@ export class InventoryService {
 
     if (!response.ok) throw new Error('获取流媒体文件请求失败');
     return response.blob(); // 直接返回二进制内容
+  }
+
+  /**
+   * 获取流媒体文件的资源链接URL（用于播放）
+   * @param filename 流媒体文件名（含扩展名）
+   * @returns 资源链接URL
+   */
+  static getStreamUrl(filename: string): string {
+    return `${STREAM_SERVICE_HOST}/v1/steaming/player/${filename}`; 
   }
 }

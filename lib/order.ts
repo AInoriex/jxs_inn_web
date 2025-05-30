@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/lib/utils';
+import { ROUTER_SERVICE_HOST } from '@/lib/utils';
 
 // 订单相关类型定义
 export type OrderItem = {
@@ -29,7 +29,7 @@ export class OrderService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${API_BASE_URL}/v1/eshop_api/user/order/create`, {
+    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/order/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ export class OrderService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${API_BASE_URL}/v1/eshop_api/user/order/status?order_id=${orderId}`, {
+    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/order/status?order_id=${orderId}`, {
       headers: { Authorization: token }
     });
 

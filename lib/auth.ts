@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { API_BASE_URL } from '@/lib/utils';
+import { ROUTER_SERVICE_HOST } from '@/lib/utils';
 
 export type User = {
   id: string;
@@ -34,7 +34,7 @@ export const useAuth = create<AuthStore>()(
       login: async (email: string, password: string) => {
         try {
           // 1. 调用登录接口获取token
-          const loginRes = await fetch(`${API_BASE_URL}/v1/eshop_api/auth/login`, {
+          const loginRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -49,7 +49,7 @@ export const useAuth = create<AuthStore>()(
           localStorage.setItem('token', token);
 
           // 3. 调用用户信息接口获取详细信息
-          const userRes = await fetch(`${API_BASE_URL}/v1/eshop_api/user/info`, {
+          const userRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
             headers: { Authorization: token },
           });
 
@@ -84,7 +84,7 @@ export const useAuth = create<AuthStore>()(
       // 注册逻辑（调用注册接口）
       register: async (name: string, email: string, password: string) => {
         try {
-          const registerRes = await fetch(`${API_BASE_URL}/v1/eshop_api/auth/register`, {
+          const registerRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }), // name可选，接口文档允许为空
@@ -119,7 +119,7 @@ export const useAuth = create<AuthStore>()(
         if (!token) return;
 
         try {
-          const userRes = await fetch(`${API_BASE_URL}/v1/eshop_api/user/info`, {
+          const userRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
             headers: { Authorization: token },
           });
 

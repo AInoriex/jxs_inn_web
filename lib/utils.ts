@@ -1,10 +1,11 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const API_BASE_URL = 'http://127.0.0.1:32135'; // 后续可改为配置文件读取
-
-// 导出 API_BASE_URL
-export { API_BASE_URL };
+const ROUTER_SERVICE_HOST = 'http://127.0.0.1:32135'; // 后续可改为配置文件读取
+// const STREAM_SERVICE_HOST = 'http://127.0.0.1:23145'; // 后续可改为配置文件读取
+const STREAM_SERVICE_HOST = 'http://127.0.0.1:32136'; // 后续可改为配置文件读取
+export { ROUTER_SERVICE_HOST };
+export { STREAM_SERVICE_HOST };
 
 /**
  * 合并和优化 Tailwind CSS 类名

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/lib/utils';
+import { ROUTER_SERVICE_HOST } from '@/lib/utils';
 
 // 购物车相关类型定义
 export type CartItem = {
@@ -33,7 +33,7 @@ export class CartService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${API_BASE_URL}/v1/eshop_api/user/cart/list`, {
+    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/list`, {
       headers: { Authorization: token }
     });
 
@@ -56,7 +56,7 @@ export class CartService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${API_BASE_URL}/v1/eshop_api/user/cart/create`, {
+    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export class CartService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${API_BASE_URL}/v1/eshop_api/user/cart/remove`, {
+    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/remove`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

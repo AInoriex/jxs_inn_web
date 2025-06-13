@@ -34,14 +34,14 @@ export const useAuth = create<AuthStore>()(
       login: async (email: string, password: string) => {
         try {
           // 1. 调用登录接口获取token
-          const loginRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/login`, {
+          const loginResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
           });
 
-          if (!loginRes.ok) throw new Error('登录接口请求失败');
-          const loginData = await loginRes.json();
+          if (!loginResp.ok) throw new Error('登录接口请求失败');
+          const loginData = await loginResp.json();
           if (loginData.code !== 0) throw new Error(loginData.msg || '登录失败');
 
           // 2. 存储token到localStorage
@@ -49,12 +49,12 @@ export const useAuth = create<AuthStore>()(
           localStorage.setItem('token', token);
 
           // 3. 调用用户信息接口获取详细信息
-          const userRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
+          const userResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
             headers: { Authorization: token },
           });
 
-          if (!userRes.ok) throw new Error('用户信息接口请求失败');
-          const userData = await userRes.json();
+          if (!userResp.ok) throw new Error('用户信息接口请求失败');
+          const userData = await userResp.json();
           if (userData.code !== 0) {
             localStorage.removeItem('token'); // 信息获取失败时清除无效token
             throw new Error(userData.msg || '获取用户信息失败');
@@ -81,21 +81,40 @@ export const useAuth = create<AuthStore>()(
         set({ user: null });
       },
 
-      // 注册逻辑（调用注册接口）
+      // 注册
       register: async (name: string, email: string, password: string) => {
         try {
-          const registerRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/register`, {
+          const registerResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }), // name可选，接口文档允许为空
           });
 
-          if (!registerRes.ok) throw new Error('注册接口请求失败');
-          const registerData = await registerRes.json();
+          if (!registerResp.ok) throw new Error('注册接口请求失败');
+          const registerData = await registerResp.json();
           if (registerData.code !== 0) throw new Error(registerData.msg || '注册失败');
 
         } catch (error) {
           throw error instanceof Error ? error : new Error('注册过程发生未知错误');
+        }
+      },
+
+      // 刷新token
+      // 请求报错401重新刷新token
+      refresh_token: async () => {
+        try {
+          const refreshResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/refresh_token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: localStorage.getItem('token') }),
+          });
+          if (!refreshResp.ok) throw new Error('刷新token接口请求失败');
+          const refreshData = await refreshResp.json();
+          if (refreshData.code !== 0) throw new Error(refreshData.msg || '刷新token失败');
+          // 刷新成功，更新token
+          localStorage.setItem('token', refreshData.data.access_token);
+        } catch (error) {
+          throw error instanceof Error ? error : new Error('刷新token过程发生未知错误');
         }
       },
 
@@ -119,12 +138,12 @@ export const useAuth = create<AuthStore>()(
         if (!token) return;
 
         try {
-          const userRes = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
+          const userResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/info`, {
             headers: { Authorization: token },
           });
 
-          if (!userRes.ok) throw new Error('用户信息接口请求失败');
-          const userData = await userRes.json();
+          if (!userResp.ok) throw new Error('用户信息接口请求失败');
+          const userData = await userResp.json();
 
           if (userData.code === 0) {
             set({

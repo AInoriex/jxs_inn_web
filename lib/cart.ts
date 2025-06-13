@@ -1,4 +1,5 @@
 import { ROUTER_SERVICE_HOST } from '@/lib/utils';
+import { withTokenRetry } from '@/lib/utils';
 
 // 购物车相关类型定义
 export type CartItem = {
@@ -33,18 +34,26 @@ export class CartService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/list`, {
-      headers: { Authorization: token }
+    return withTokenRetry(async () => {  // 使用通用重试工具
+      const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/list`, {
+        headers: { Authorization: token }
+      });
+
+      // 检测401状态并包装错误（传递响应头）
+      if (res.status === 401) {
+        const error = new Error('401 Unauthorized');
+        error['responseHeaders'] = res.headers;  // 关键：传递响应头给重试工具
+        throw error;
+      }
+
+      if (!res.ok) throw new Error('获取购物车列表请求失败');
+      const jsonData = await res.json();
+      if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取购物车列表失败');
+
+      console.log('CartService.getList: ', jsonData.data);
+      console.log('CartService.getList.result: ', jsonData.data.result);
+      return jsonData.data.result;
     });
-
-    if (!res.ok) throw new Error('获取购物车列表请求失败');
-    const jsonData = await res.json();
-    if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取购物车列表失败');
-
-    // 打日志
-    console.log('CartService.getList: ', jsonData.data);
-    console.log('CartService.getList.result: ', jsonData.data.result);
-    return jsonData.data.result;
   }
 
   /**
@@ -56,44 +65,59 @@ export class CartService {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token
-      },
-      body: JSON.stringify({
-        product_id: createCartItemParams.productId,
-        quantity: createCartItemParams.quantity
-      })
+    return withTokenRetry(async () => {  // 使用通用重试工具
+      const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({
+          product_id: createCartItemParams.productId,
+          quantity: createCartItemParams.quantity
+        })
+      });
+
+      if (res.status === 401) {
+        const error = new Error('401 Unauthorized');
+        error['responseHeaders'] = res.headers;
+        throw error;
+      }
+
+      if (!res.ok) throw new Error('创建购物车项请求失败');
+      const jsonData = await res.json();
+      if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建购物车项失败');
+
+      return jsonData.data.cart_item_id;
     });
-
-    if (!res.ok) throw new Error('创建购物车项请求失败');
-    const jsonData = await res.json();
-    if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建购物车项失败');
-
-    return jsonData.data.cart_item_id;
   }
 
   /**
-   * 移除购物车项
-   * @param removeCartItemParams 购物车项
+   * 移除购物车项（修改后）
    */
   static async RemoveCart(removeCartItemParams: RemoveCartItemParams): Promise<void> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
-    const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/remove`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token
-      },
-      body: JSON.stringify({ product_id: removeCartItemParams.productId })
-    });
+    return withTokenRetry(async () => {  // 使用通用重试工具
+      const resp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({ product_id: removeCartItemParams.productId })
+      });
 
-    if (!res.ok) throw new Error('移除购物车项请求失败');
-    const jsonData = await res.json();
-    if (jsonData.code !== 0) throw new Error(jsonData.msg || '移除购物车项失败');
+      if (resp.status === 401) {
+        const error = new Error('401 Unauthorized');
+        error['responseHeaders'] = resp.headers;
+        throw error;
+      }
+
+      if (!resp.ok) throw new Error('移除购物车项请求失败');
+      const jsonData = await resp.json();
+      if (jsonData.code !== 0) throw new Error(jsonData.msg || '移除购物车项失败');
+    });
   }
 }

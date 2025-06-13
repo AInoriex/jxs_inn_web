@@ -1,12 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useAuth } from '@/lib/auth';  // 新增：导入auth store
 
 const ROUTER_SERVICE_HOST = 'http://127.0.0.1:32135'; // 后续可改为配置文件读取
 // const STREAM_SERVICE_HOST = 'http://127.0.0.1:23145'; // 后续可改为配置文件读取
 const STREAM_SERVICE_HOST = 'http://127.0.0.1:32136'; // 后续可改为配置文件读取
 export { ROUTER_SERVICE_HOST, STREAM_SERVICE_HOST};
 
-// 定义接口返回的标准结构（假设后端统一返回格式）
+
 export interface ServerApiCommonResponse<T> {
   code: number;
   msg: string;
@@ -20,4 +21,30 @@ export interface ServerApiCommonResponse<T> {
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+// 新增：通用token重试工具（最大3次）
+export async function withTokenRetry<T>(request: () => Promise<T>): Promise<T> {
+  let retry = 0;
+  const maxRetry = 3;
+
+  while (retry < maxRetry) {
+    try {
+      return await request();
+    } catch (error) {
+      // 仅处理401且需要刷新token的场景
+      if (
+        error instanceof Error &&
+        error.message.includes('401') &&
+        error['responseHeaders']?.get('refresh-token') === '1'
+      ) {
+        await useAuth.getState().refresh_token();  // 调用auth的刷新方法
+        await new Promise(resolve => setTimeout(resolve, 200));  // 延迟200ms
+        retry++;
+      } else {
+        throw error;  // 其他错误直接抛出
+      }
+    }
+  }
+  throw new Error(`请求重试${maxRetry}次后仍失败`);
 }

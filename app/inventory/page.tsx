@@ -14,8 +14,6 @@ import { InventoryService, InventoryItem as ApiInventoryItem } from '@/lib/inven
 
 import ReactPlayer from 'react-player'; // 引入ReactPlayer
 import { Slider } from '@/components/ui/slider'; // 使用项目UI库的滑块组件
-import { Button } from '@/components/ui/button'; // 确保已导入Button
-
 import { Play, Pause, SkipForward, SkipBack, VolumeX, Volume2 } from 'lucide-react';
 
 // 转换接口类型到页面使用类型
@@ -59,23 +57,25 @@ export default function InventoryPage() {
     setAudioState(prev => ({ ...prev, playing: !prev.playing }));
   };
 
-  // 处理进度条拖动开始
-  const handleSeekStart = () => {
+  // 处理进度条变化
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Radix Slider 的 value 是数组格式（支持多滑块），这里取第一个值
+    const newValue = parseFloat(e.target.value);
+    if (playerRef.current && !isNaN(newValue)) {
+      setAudioState(prev => ({ ...prev, currentTime: newValue }));
+    }
+  };
+  
+  // 处理进度条拖动开始（补充鼠标事件类型）
+  const handleSeekStart = (e: React.MouseEvent) => {
     setAudioState(prev => ({ ...prev, seeking: true }));
   };
 
-  // 处理进度条变化
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (playerRef.current && !isNaN(Number(e.target.value))) {
-      setAudioState(prev => ({ ...prev, currentTime: Number(e.target.value) }));
-    }
-  };
-
   // 处理进度条拖动结束
-  const handleSeekEnd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (playerRef.current &&!isNaN(Number(e.target.value))) {
-      playerRef.current.seekTo(Number(e.target.value));
-      setAudioState(prev => ({...prev, seeking: false }));
+  const handleSeekEnd = (e: React.MouseEvent) => {
+    if (playerRef.current && !isNaN(audioState.currentTime)) {
+      playerRef.current.seekTo(audioState.currentTime);
+      setAudioState(prev => ({ ...prev, seeking: false }));
     }
   };
 
@@ -137,7 +137,8 @@ export default function InventoryPage() {
         }));
         setItems(pageItems);
       } catch (error) {
-        console.error('获取藏品失败:', error);
+        toast.error('获取藏品失败，请稍后重试');
+        console.error(`获取藏品失败，错误信息：${error}`);
       } finally {
         setLoading(false);
       }
@@ -262,12 +263,11 @@ export default function InventoryPage() {
                           {new Date(audioState.currentTime * 1000).toISOString().substr(14, 5)}
                         </span>
                         <Slider
-                          type="range"
                           min={0}
                           max={audioState.duration}
                           value={[audioState.currentTime]} // 适配 Radix Slider 的数组格式
                           onMouseDown={handleSeekStart}
-                          onChange={(e) => handleSeekChange(e)}
+                          onChange={handleSeekChange}
                           onMouseUp={handleSeekEnd}
                           className="flex-1"
                         />
@@ -291,7 +291,6 @@ export default function InventoryPage() {
                           {audioState.muted ? <VolumeX /> : <Volume2 />}
                         </div>
                         <Slider
-                          type="range"
                           min={0}
                           max={1}
                           step={0.1}

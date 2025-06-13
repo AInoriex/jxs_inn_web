@@ -40,7 +40,7 @@ export default function CartPage() {
           return;
         }
 
-        const items = await CartService.getList();
+        const items = await CartService.GetCartList();
         // 检查 cartItems 是否为数组
         if (!Array.isArray(items)) { 
           // throw new Error('购物车数据为空');
@@ -86,7 +86,7 @@ export default function CartPage() {
   // 移除商品（同步后端）
   const removeItem = async (id: string) => {
     try {
-      await CartService.remove({ cartItemId: id }); // 调用购物车服务移除接口
+      await CartService.RemoveCart({ cartItemId: id }); // 调用购物车服务移除接口
       setCartItems(items => items.filter(item => item.id !== id));
       toast.success('商品已移除');
     } catch (error) {

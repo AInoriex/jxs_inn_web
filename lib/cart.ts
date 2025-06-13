@@ -29,7 +29,7 @@ export class CartService {
    * 获取购物车列表
    * @returns 购物车项数组
    */
-  static async getList(): Promise<CartItem[]> {
+  static async GetCartList(): Promise<CartItem[]> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
@@ -52,7 +52,7 @@ export class CartService {
    * @param createCartItemParams 商品ID和数量
    * @returns 新创建的购物车项ID
    */
-  static async create(createCartItemParams: CreateCartItemParams): Promise<string> {
+  static async CreateCart(createCartItemParams: CreateCartItemParams): Promise<string> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
@@ -79,7 +79,7 @@ export class CartService {
    * 移除购物车项
    * @param removeCartItemParams 购物车项
    */
-  static async remove(removeCartItemParams: RemoveCartItemParams): Promise<void> {
+  static async RemoveCart(removeCartItemParams: RemoveCartItemParams): Promise<void> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 

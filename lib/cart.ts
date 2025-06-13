@@ -2,7 +2,7 @@ import { ROUTER_SERVICE_HOST } from '@/lib/utils';
 
 // 购物车相关类型定义
 export type CartItem = {
-  id: string;          // 购物车项ID
+  id: string;          // 商品ID
   title: string;       // 商品标题
   price: number;       // 商品单价
   quantity: number;    // 商品数量
@@ -10,17 +10,17 @@ export type CartItem = {
 };
 
 interface CreateCartItemParams {
-  productId: string;   // 商品ID（对应接口product_id）
+  productId: string;   // 商品ID
   quantity: number;    // 购买数量
 }
 
 interface RemoveCartItemParams {
-  cartItemId: string;  // 购物车项ID（对应接口cart_item_id）
+  productId: string;  // 商品ID
 }
 
 interface UpdateCartItemParams {
-  cartItemId: string;  // 购物车项ID（对应接口cart_item_id）
-  quantity: number;    // 新的购买数量
+  productId: string;  // 商品ID
+  quantity: number;   // 新的购买数量
 }
 
 /************* 购物车类接口 *************/
@@ -89,7 +89,7 @@ export class CartService {
         'Content-Type': 'application/json',
         Authorization: token
       },
-      body: JSON.stringify({ cart_item_id: removeCartItemParams.cartItemId })
+      body: JSON.stringify({ product_id: removeCartItemParams.productId })
     });
 
     if (!res.ok) throw new Error('移除购物车项请求失败');

@@ -83,10 +83,10 @@ export default function CartPage() {
     // TODO: 调用CartService.update接口同步后端（需补充update方法）
   };
 
-  // 移除商品（同步后端）
+  // 移除商品
   const removeItem = async (id: string) => {
     try {
-      await CartService.RemoveCart({ cartItemId: id }); // 调用购物车服务移除接口
+      await CartService.RemoveCart({ productId: id }); // 调用购物车服务移除接口
       setCartItems(items => items.filter(item => item.id !== id));
       toast.success('商品已移除');
     } catch (error) {

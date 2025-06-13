@@ -11,8 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { FetchProductList } from '@/lib/product';
+import { CartService } from '@/lib/cart';
 
-type Product = {
+// 保持类型定义，但建议未来统一放到types目录
+export type Product = {
   id: string;
   title: string;
   description: string;
@@ -21,67 +24,66 @@ type Product = {
   sales: number;
 };
 
-// const mockProducts: Product[] = [
-//   {
-//     id: '1',
-//     title: '地铁.mp3',
-//     description: '作为小O的你，在地铁上被陌生女A欺负了？！',
-//     price: 29.9,
-//     image: 'https://obs-prod-hw-bj-xp-ai-train.obs.cn-north-4.myhuaweicloud.com/QUWAN_DATA/temp_data/%E5%85%B6%E4%BB%96/metro_mp3_cover.jpg',
-//     // image: 'https://ucarecdn.com/f58a1bee-1f83-4956-8c05-88e900a387c9/metro_mp3_cover.jpg',
-//     sales: 520,
-//   },
-//   // Add more mock products as needed
-// ];
-
 export function ProductGrid() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const loadProducts = async () => {
+      setIsLoading(true);
       try {
-        const timestamp = Date.now();
-        const response = await fetch(
-          `http://127.0.0.1:32135/v1/eshop_api/product/list?sign=${timestamp}`
-        );
-        const data = await response.json();
-
-        if (data.code !== 0) {
-          toast.error(`请求失败: ${data.msg} (code: ${data.code})`);
-          return;
+        const result = await FetchProductList();
+        if (result) {
+          setProducts(result);
+          setError(null);
+        } else {
+          setError('获取产品列表失败，请稍后重试');
         }
-
-        const formattedProducts = data.data.result.map((product: any) => ({
-          id: product.id.toString(),
-          title: product.title,
-          description: product.description,
-          price: product.price,
-          image: product.image_url,
-          sales: product.sales,
-        }));
-
-        setProducts(formattedProducts);
       } catch (error) {
-        toast.error('网络请求异常，请稍后重试');
-        console.error('Fetch products error:', error);
+        toast.error(error instanceof Error ? error.message : '获取商品列表失败，请稍后重试');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    loadProducts();
   }, []);
 
-  if (loading) {
+  // 优化加载状态展示
+  if (isLoading) {
     return <div className="text-center py-8">加载中...</div>;
   }
+
+  // 获取商品列表错误展示
+  if (error) {
+    // return <div className="text-center py-8 text-red-500">{error}</div>;
+    return <div className="text-center py-8 text-red-500">获取商品列表失败，请稍后重试</div>;
+  }
+
+  // 加入购物车
+  const handleAddToCart = async (productId: string) => {
+    setIsAddingToCart(true);
+    try {
+      // 调用购物车创建接口（默认数量为1）
+      const cartItemId = await CartService.CreateCart({
+        productId,
+        quantity: 1
+      });
+      toast.success('商品已成功加入购物车');
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '加入购物车失败';
+      toast.error(errorMsg);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {/* {mockProducts.map((product) => ( */}
         {products.map((product) => (
           <Card
             key={product.id}
@@ -103,7 +105,13 @@ export function ProductGrid() {
               </p>
               <div className="mt-4 flex items-center justify-between">
                 <span className="font-semibold">${product.price}</span>
-                <Button size="sm">加入购物车</Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => handleAddToCart(product.id)}
+                  disabled={isAddingToCart}
+                >
+                  {isAddingToCart ? '添加中...' : '加入购物车'}
+                </Button>
               </div>
             </div>
           </Card>
@@ -134,7 +142,13 @@ export function ProductGrid() {
                 </div>
                 <p className="text-sm">{selectedProduct.description}</p>
                 <div className="flex gap-4">
-                  <Button className="flex-1">加入购物车</Button>
+                  <Button 
+                    className="flex-1"
+                    onClick={() => handleAddToCart(selectedProduct.id)}
+                    disabled={isAddingToCart}
+                  >
+                    {isAddingToCart ? '添加中...' : '加入购物车'}
+                  </Button>
                   <Button className="flex-1" variant="secondary">立即购买</Button>
                 </div>
               </div>

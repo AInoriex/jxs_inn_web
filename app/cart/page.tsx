@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 import { OrderService } from '@/lib/order';
 
-// 定义页面购物车商品展示
+// 购物车商品展示
 type CartItem = {
   id: string;
   title: string;
@@ -68,7 +68,6 @@ export default function CartPage() {
   // 使用 useMemo 计算总计
   const total = useMemo(() => subtotal + shipping, [subtotal, shipping]);
 
-
   // 更新购物车商品数量
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -94,7 +93,7 @@ export default function CartPage() {
     }
   };
 
-  // 结账逻辑（调用订单服务）
+  // 结账逻辑
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast.warning('购物车为空');
@@ -104,7 +103,7 @@ export default function CartPage() {
     setIsLoading(true);
     try {
       // 构造订单参数（从购物车数据转换）
-      const orderId = await OrderService.create({
+      const createOrderResp = await OrderService.Create({
         itemList: cartItems.map(item => ({
           productId: item.id,
           quantity: item.quantity
@@ -112,9 +111,9 @@ export default function CartPage() {
         paymentMethod: 'qrcode',
         paymentGatewayType: 10
       });
-
-      toast.success(`订单创建成功！订单ID：${orderId}`);
-      // TODO: 跳转至支付页面或订单详情页（根据业务需求）
+      console.log(`订单创建成功，订单ID：${createOrderResp.orderId}，二维码：${createOrderResp.qrCode}`);
+      toast.success(`订单创建成功`);
+      // TODO: 跳转至支付页面或订单详情页
       // router.push(`/order/${orderId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '结账失败，请稍后重试');

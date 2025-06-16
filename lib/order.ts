@@ -6,7 +6,7 @@ export type OrderItem = {
   quantity: number;    // 购买数量
 };
 
-export type OrderStatus = {
+export type OrderStatusResp = {
   orderId: string;     // 订单ID
   status: number;      // 订单状态（0:已创建, 1:待支付, 2:已支付...f）
   statusText: string;  // 状态描述（如"待支付"）
@@ -18,6 +18,11 @@ interface CreateOrderParams {
   paymentGatewayType: 10 | 11 | 12;       // 支付网关类型（10:原力通, 11:支付宝, 12:微信）
 }
 
+export type CreateOrderResp = {
+  orderId: string;
+  qrCode: string;
+}
+
 /************* 订单类接口 *************/
 export class OrderService {
   /**
@@ -25,7 +30,7 @@ export class OrderService {
    * @param createOrderParams 订单参数（商品列表、支付方式等）
    * @returns 新创建的订单ID
    */
-  static async create(createOrderParams: CreateOrderParams): Promise<string> {
+  static async Create(createOrderParams: CreateOrderParams): Promise<CreateOrderResp> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
@@ -48,8 +53,14 @@ export class OrderService {
     if (!res.ok) throw new Error('创建订单请求失败');
     const jsonData = await res.json();
     if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建订单失败');
+    if (!jsonData.data.order_id || !jsonData.data.qr_code) {
+      throw new Error('创建订单失败，缺少订单ID或二维码');
+    }
 
-    return jsonData.data.order_id;
+    return {
+      orderId: jsonData.data.order_id,
+      qrCode: jsonData.data.qr_code,
+    };
   }
 
   /**
@@ -57,7 +68,7 @@ export class OrderService {
    * @param orderId 订单ID
    * @returns 订单状态信息
    */
-  static async getStatus(orderId: string): Promise<OrderStatus> {
+  static async GetStatus(orderId: string): Promise<OrderStatusResp> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 

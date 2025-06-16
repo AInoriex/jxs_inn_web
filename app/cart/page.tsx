@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Minus, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
@@ -139,24 +140,25 @@ export default function CartPage() {
   useEffect(() => {
     // 当支付页面显示且有订单数据时启动轮询
     if (isPaymentVisible && paymentData?.orderId) {
-      const timer = setInterval(async () => {
+      const pollingTimer = setInterval(async () => {
         try {
+          if (!isPaymentVisible) { 
+            clearInterval(pollingTimer);
+            return;
+          }
+  
           const isPaid = await OrderService.GetStatus(paymentData.orderId);
           if (isPaid) {
-            clearInterval(timer); // 清除当前定时器
-            setIsPaymentVisible(false); // 关闭支付页面
-            toast.success('支付成功'); // 显示成功提示
-          }
-          if (!isPaymentVisible) {
-            clearInterval(timer); // 关闭支付页面时清除定时器
+            clearInterval(pollingTimer);
+            setIsPaymentVisible(false);
+            toast.success('支付成功');
           }
         } catch (error) {
-          console.error('轮询支付状态失败:', error); // 错误日志
+          console.error('轮询支付状态失败:', error);
         }
-      }, 2000); // 每2秒轮询一次
-      setPollingTimer(timer); // 存储定时器ID
+      }, 2000);
     }
-
+  
     // 清理函数：页面关闭或数据变化时清除定时器
     return () => {
       if (pollingTimer) clearInterval(pollingTimer);
@@ -174,7 +176,9 @@ export default function CartPage() {
       setIsPaymentVisible(false);
       toast.error('支付超时，请重新创建订单');
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [isPaymentVisible, countdown]);
 
   // 复制订单ID到剪贴板
@@ -192,47 +196,53 @@ export default function CartPage() {
   // 支付子页面组件
   const PaymentModal = () => (
     isPaymentVisible && paymentData &&  (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg relative min-w-[400px]">
-          {/* 右上角关闭按钮 */}
-          <button
+    <Dialog 
+      open={isPaymentVisible} 
+      onOpenChange={() => setIsPaymentVisible(false)}
+    >
+      <DialogContent className="p-6 text-center">
+        {/* 右上角关闭按钮 */}
+        <div className="absolute top-4 right-4">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsPaymentVisible(false)}
-            className="absolute top-4 right-4 text-red-600"
+            className="text-red-600"
           >
-            <X className="h-6 w-6" />
-          </button>
-
-          {/* 倒计时文本 */}
-          <div className="text-center mb-4" style={{ fontSize: '18px' }}>
-            请于 {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')} 之内完成支付
-          </div>
-
-          {/* 二维码展示 */}
-          <img
-            src={`data:image/png;base64,${paymentData.qrCode}`}
-            alt="支付二维码"
-            className="w-48 h-48 mx-auto mb-6"
-          />
-
-          {/* 疑问文本 */}
-          <div 
-            onClick={copyOrderId}
-            className="text-center text-gray-500 italic cursor-pointer mb-4"
-            style={{ fontSize: '14px' }} // 预留fontSize调节
-          >
-            ? 对此订单有疑惑请点击我
-          </div>
-
-          {/* 取消支付按钮 */}
-          <button
-            onClick={() => setIsPaymentVisible(false)}
-            className="text-red-600 font-bold underline mx-auto block"
-            style={{ fontSize: '16px' }} // 预留fontSize调节
-          >
-            取消支付
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-      </div>
+
+        {/* 倒计时文本 */}
+        <div className="text-lg font-medium mb-6">
+          请于 {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')} 之内完成支付
+        </div>
+
+        {/* 二维码展示 */}
+        <img
+          src={`data:image/png;base64,${paymentData.qrCode}`}
+          alt="支付二维码"
+          className="w-48 h-48 mx-auto mb-6 rounded-lg"
+        />
+
+        {/* 疑问文本 */}
+        <div 
+          onClick={copyOrderId}
+          className="text-sm text-gray-500 italic cursor-pointer mb-6"
+        >
+          ❔ 对此订单有疑惑，请联系客服
+        </div>
+
+        {/* 取消支付按钮 */}
+        <Button
+          variant="outline"
+          className="text-red-600 font-bold underline"
+          onClick={() => setIsPaymentVisible(false)}
+        >
+          取消支付
+        </Button>
+      </DialogContent>
+    </Dialog>
     )
   );
 

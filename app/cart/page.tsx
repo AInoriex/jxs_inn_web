@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Minus, Plus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 import { OrderService } from '@/lib/order';
+
 
 // 购物车商品展示
 type CartItem = {
@@ -29,14 +31,16 @@ type CreateOrderResp = {
 };
 
 export default function CartPage() {
+  const router = useRouter();
+  const { user, checkAuth } = useAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const { user, checkAuth } = useAuth(); // 获取auth的user状态和checkAuth方法
-  const [isLoading, setIsLoading] = useState(false); // 结账加载状态
-  // 添加支付相关状态
-  const [isPaymentVisible, setIsPaymentVisible] = useState(false);
-  const [paymentData, setPaymentData] = useState<CreateOrderResp | null>(null);
-  const [countdown, setCountdown] = useState(180); // 3分钟倒计时（单位：秒）
-  const [pollingTimer, setPollingTimer] = useState<NodeJS.Timeout | null>(null); // 新增轮询定时器状态
+  const [paymentData, setPaymentData] = useState<CreateOrderResp | null>(null); // 支付数据
+  const [isLoading, setIsLoading] = useState(false); // 下单加载状态（防止重复创建订单）
+  const [isPaymentVisible, setIsPaymentVisible] = useState(false); // 支付子页面展示状态
+  const paymentCountdownMinutesLimit = 3; // HARDNEED 支付倒计时限制（分钟）
+  const [countdown, setCountdown] = useState(paymentCountdownMinutesLimit * 60); // 设置支付倒计时
+  const pollingTimer = useRef<NodeJS.Timeout | null>(null); // 轮询支付状态定时器
+  const countdownTimer = useRef<NodeJS.Timeout | null>(null); // 支付倒计时定时器
 
   // 加载购物车数据
   useEffect(() => {
@@ -105,7 +109,7 @@ export default function CartPage() {
     }
   };
 
-  // 结账逻辑
+  // 结账&创建订单
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast.warning('购物车为空');
@@ -123,12 +127,13 @@ export default function CartPage() {
         paymentMethod: 'qrcode',
         paymentGatewayType: 10
       });
-      console.log(`订单创建成功，订单ID：${createOrderResp.orderId}，二维码：${createOrderResp.qrCode}`);
+      // console.log(`订单创建成功，订单ID：${createOrderResp.orderId}，二维码：${createOrderResp.qrCode}`);
       toast.success(`订单创建成功`);
+
       // 打开支付子页面并初始化数据
       setPaymentData(createOrderResp);
       setIsPaymentVisible(true);
-      setCountdown(180); // 重置倒计时
+      setCountdown(paymentCountdownMinutesLimit * 60); // 重置倒计时
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '结账失败，请稍后重试');
     } finally {
@@ -136,50 +141,58 @@ export default function CartPage() {
     }
   };
 
-  // 支付状态轮询逻辑
+  // 支付状态轮询逻辑（当支付页面显示且有订单数据时启动轮询）
   useEffect(() => {
-    // 当支付页面显示且有订单数据时启动轮询
     if (isPaymentVisible && paymentData?.orderId) {
-      const pollingTimer = setInterval(async () => {
+      pollingTimer.current = setInterval(async () => {
         try {
-          if (!isPaymentVisible) { 
-            clearInterval(pollingTimer);
-            return;
-          }
-  
           const isPaid = await OrderService.GetStatus(paymentData.orderId);
           if (isPaid) {
-            clearInterval(pollingTimer);
-            setIsPaymentVisible(false);
             toast.success('支付成功');
+            handleClosePayment();
+            // 跳转到`藏品`页面
+            router.push(`/inventory`);
           }
         } catch (error) {
           console.error('轮询支付状态失败:', error);
         }
       }, 2000);
     }
-  
-    // 清理函数：页面关闭或数据变化时清除定时器
     return () => {
-      if (pollingTimer) clearInterval(pollingTimer);
+      if (pollingTimer.current) clearInterval(pollingTimer.current);
     };
   }, [isPaymentVisible, paymentData]);
 
-  // 倒计时逻辑
+  // 倒计时逻辑（当支付页面显示且倒计时大于0时启动倒计时）
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isPaymentVisible && countdown > 0) {
-      timer = setInterval(() => {
+      countdownTimer.current = setInterval(() => {
         setCountdown(prev => prev - 1);
       }, 1000);
     } else if (countdown === 0) {
-      setIsPaymentVisible(false);
+      handleClosePayment();
       toast.error('支付超时，请重新创建订单');
     }
     return () => {
-      if (timer) clearInterval(timer);
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
     };
   }, [isPaymentVisible, countdown]);
+
+  // 统一关闭关闭支付子页面处理函数
+  const handleClosePayment = () => {
+    // 清除轮询定时器
+    if (pollingTimer.current) {
+      clearInterval(pollingTimer.current);
+      pollingTimer.current = null;
+    }
+    // 清除倒计时定时器
+    if (countdownTimer.current) {
+      clearInterval(countdownTimer.current);
+      countdownTimer.current = null;
+    }
+    // 关闭支付页面
+    setIsPaymentVisible(false);
+  };
 
   // 复制订单ID到剪贴板
   const copyOrderId = async () => {
@@ -201,18 +214,6 @@ export default function CartPage() {
       onOpenChange={() => setIsPaymentVisible(false)}
     >
       <DialogContent className="p-6 text-center">
-        {/* 右上角关闭按钮 */}
-        <div className="absolute top-4 right-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsPaymentVisible(false)}
-            className="text-red-600"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
         {/* 倒计时文本 */}
         <div className="text-lg font-medium mb-6">
           请于 {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')} 之内完成支付
@@ -225,7 +226,7 @@ export default function CartPage() {
           className="w-48 h-48 mx-auto mb-6 rounded-lg"
         />
 
-        {/* 疑问文本 */}
+        {/* 订单疑惑文本 */}
         <div 
           onClick={copyOrderId}
           className="text-sm text-gray-500 italic cursor-pointer mb-6"
@@ -237,7 +238,7 @@ export default function CartPage() {
         <Button
           variant="outline"
           className="text-red-600 font-bold underline"
-          onClick={() => setIsPaymentVisible(false)}
+          onClick={handleClosePayment}
         >
           取消支付
         </Button>
@@ -248,8 +249,8 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* 购物车页面渲染 */}
       <h1 className="text-2xl font-bold mb-8">购物车</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item) => (
@@ -334,7 +335,8 @@ export default function CartPage() {
         </div>
       </div>
 
-      {PaymentModal()} {/* 添加支付子页面渲染 */}
+       {/* 添加支付子页面渲染 */}
+      {PaymentModal()}
     </div>
   );
 }

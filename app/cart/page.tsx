@@ -21,10 +21,21 @@ type CartItem = {
   image: string;
 };
 
+// 添加支付响应类型（根据OrderService.Create返回值）
+type CreateOrderResp = {
+  orderId: string;
+  qrCode: string;
+};
+
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { user, checkAuth } = useAuth(); // 获取auth的user状态和checkAuth方法
   const [isLoading, setIsLoading] = useState(false); // 结账加载状态
+  // 添加支付相关状态
+  const [isPaymentVisible, setIsPaymentVisible] = useState(false);
+  const [paymentData, setPaymentData] = useState<CreateOrderResp | null>(null);
+  const [countdown, setCountdown] = useState(180); // 3分钟倒计时（单位：秒）
+  const [pollingTimer, setPollingTimer] = useState<NodeJS.Timeout | null>(null); // 新增轮询定时器状态
 
   // 加载购物车数据
   useEffect(() => {
@@ -113,14 +124,117 @@ export default function CartPage() {
       });
       console.log(`订单创建成功，订单ID：${createOrderResp.orderId}，二维码：${createOrderResp.qrCode}`);
       toast.success(`订单创建成功`);
-      // TODO: 跳转至支付页面或订单详情页
-      // router.push(`/order/${orderId}`);
+      // 打开支付子页面并初始化数据
+      setPaymentData(createOrderResp);
+      setIsPaymentVisible(true);
+      setCountdown(180); // 重置倒计时
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '结账失败，请稍后重试');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // 支付状态轮询逻辑
+  useEffect(() => {
+    // 当支付页面显示且有订单数据时启动轮询
+    if (isPaymentVisible && paymentData?.orderId) {
+      const timer = setInterval(async () => {
+        try {
+          const isPaid = await OrderService.GetStatus(paymentData.orderId);
+          if (isPaid) {
+            clearInterval(timer); // 清除当前定时器
+            setIsPaymentVisible(false); // 关闭支付页面
+            toast.success('支付成功'); // 显示成功提示
+          }
+          if (!isPaymentVisible) {
+            clearInterval(timer); // 关闭支付页面时清除定时器
+          }
+        } catch (error) {
+          console.error('轮询支付状态失败:', error); // 错误日志
+        }
+      }, 2000); // 每2秒轮询一次
+      setPollingTimer(timer); // 存储定时器ID
+    }
+
+    // 清理函数：页面关闭或数据变化时清除定时器
+    return () => {
+      if (pollingTimer) clearInterval(pollingTimer);
+    };
+  }, [isPaymentVisible, paymentData]);
+
+  // 倒计时逻辑
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPaymentVisible && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setIsPaymentVisible(false);
+      toast.error('支付超时，请重新创建订单');
+    }
+    return () => clearInterval(timer);
+  }, [isPaymentVisible, countdown]);
+
+  // 复制订单ID到剪贴板
+  const copyOrderId = async () => {
+    if (paymentData?.orderId) {
+      try {
+        await navigator.clipboard.writeText(paymentData.orderId);
+        toast.info('已复制订单ID，请联系客服');
+      } catch (err) {
+        toast.error('复制失败，请手动复制');
+      }
+    }
+  };
+
+  // 支付子页面组件
+  const PaymentModal = () => (
+    isPaymentVisible && paymentData &&  (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg relative min-w-[400px]">
+          {/* 右上角关闭按钮 */}
+          <button
+            onClick={() => setIsPaymentVisible(false)}
+            className="absolute top-4 right-4 text-red-600"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* 倒计时文本 */}
+          <div className="text-center mb-4" style={{ fontSize: '18px' }}>
+            请于 {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')} 之内完成支付
+          </div>
+
+          {/* 二维码展示 */}
+          <img
+            src={`data:image/png;base64,${paymentData.qrCode}`}
+            alt="支付二维码"
+            className="w-48 h-48 mx-auto mb-6"
+          />
+
+          {/* 疑问文本 */}
+          <div 
+            onClick={copyOrderId}
+            className="text-center text-gray-500 italic cursor-pointer mb-4"
+            style={{ fontSize: '14px' }} // 预留fontSize调节
+          >
+            ? 对此订单有疑惑请点击我
+          </div>
+
+          {/* 取消支付按钮 */}
+          <button
+            onClick={() => setIsPaymentVisible(false)}
+            className="text-red-600 font-bold underline mx-auto block"
+            style={{ fontSize: '16px' }} // 预留fontSize调节
+          >
+            取消支付
+          </button>
+        </div>
+      </div>
+    )
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -209,6 +323,8 @@ export default function CartPage() {
           </Card>
         </div>
       </div>
+
+      {PaymentModal()} {/* 添加支付子页面渲染 */}
     </div>
   );
 }

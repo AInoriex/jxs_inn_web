@@ -6,12 +6,6 @@ export type OrderItem = {
   quantity: number;    // 购买数量
 };
 
-export type OrderStatusResp = {
-  orderId: string;     // 订单ID
-  status: number;      // 订单状态（0:已创建, 1:待支付, 2:已支付...f）
-  statusText: string;  // 状态描述（如"待支付"）
-};
-
 interface CreateOrderParams {
   itemList: OrderItem[];                  // 商品列表
   paymentMethod: 'qrcode' | 'bank' | 'point'; // 支付方式
@@ -53,13 +47,13 @@ export class OrderService {
     if (!res.ok) throw new Error('创建订单请求失败');
     const jsonData = await res.json();
     if (jsonData.code !== 0) throw new Error(jsonData.msg || '创建订单失败');
-    if (!jsonData.data.order_id || !jsonData.data.qr_code) {
+    if (!jsonData.data.order_id || !jsonData.data.qrcode) {
       throw new Error('创建订单失败，缺少订单ID或二维码');
     }
 
     return {
       orderId: jsonData.data.order_id,
-      qrCode: jsonData.data.qr_code,
+      qrCode: jsonData.data.qrcode,
     };
   }
 
@@ -68,7 +62,7 @@ export class OrderService {
    * @param orderId 订单ID
    * @returns 订单状态信息
    */
-  static async GetStatus(orderId: string): Promise<OrderStatusResp> {
+  static async GetStatus(orderId: string): Promise<boolean> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('用户未登录');
 
@@ -76,14 +70,10 @@ export class OrderService {
       headers: { Authorization: token }
     });
 
-    if (!res.ok) throw new Error('获取订单状态请求失败');
+    if (!res.ok) throw new Error('请求订单状态失败');
     const jsonData = await res.json();
-    if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取订单状态失败');
+    if (jsonData.code !== 0) return false;
 
-    return {
-      orderId: jsonData.data.order_id,
-      status: jsonData.data.status,
-      statusText: jsonData.data.status_text
-    };
+    return true;
   }
 }

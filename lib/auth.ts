@@ -18,10 +18,11 @@ export type User = {
 type AuthStore = {
   user: User | null;
   login: (email: string, password: string) => void;
-  register: (name: string, email: string, password: string) => void;
+  register: (name: string, email: string, password: string, verifyCode: string) => void;
   logout: () => void;
   checkAuth: () => void;
   updateUser: (newUser: Partial<User>) => void;
+  sendEmailVerifyCode: (email: string) => Promise<void>;
 };
 
 export const useAuth = create<AuthStore>()(
@@ -29,7 +30,8 @@ export const useAuth = create<AuthStore>()(
     (set) => ({
       user: null,
 
-      // 登录流程：调用登录接口 → 存储token → 获取用户信息
+      // 登录
+      // 调用登录接口 → 存储token → 获取用户信息
       login: async (email: string, password: string) => {
         try {
           // 1. 调用登录接口获取token
@@ -74,27 +76,28 @@ export const useAuth = create<AuthStore>()(
         }
       },
 
-      // 登出流程：清除token和用户状态
+      // 登出
+      // 清除token和用户状态
       logout: () => {
         localStorage.removeItem('token');
         set({ user: null });
       },
 
       // 注册
-      register: async (name: string, email: string, password: string) => {
+      register: async (name: string, email: string, password: string, verifyCode: string) => {
         try {
           const registerResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password }), // name可选，接口文档允许为空
+            body: JSON.stringify({ name, email, password, code: verifyCode }),
           });
 
-          if (!registerResp.ok) throw new Error('注册接口请求失败');
+          if (!registerResp.ok) throw new Error('请求注册接口失败');
           const registerData = await registerResp.json();
           if (registerData.code !== 0) throw new Error(registerData.msg || '注册失败');
 
         } catch (error) {
-          throw error instanceof Error ? error : new Error('注册过程发生未知错误');
+          throw error instanceof Error ? error : new Error('注册失败，请稍后再试');
         }
       },
 
@@ -148,16 +151,32 @@ export const useAuth = create<AuthStore>()(
           set({ user: null });
         }
       },
+
       // 用户状态更新方法（支持部分更新）
       updateUser: (newUser) => {
-        set(state => ({ 
-          user: state.user ? { ...state.user, ...newUser } : null 
+        set(state => ({
+          user: state.user ? { ...state.user, ...newUser } : null
         }));
       },
+
+      // 发送邮箱验证码
+      sendEmailVerifyCode: async (email: string) => {
+        const resp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/verify_email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!resp.ok) throw new Error('验证码发送失败');
+        const data = await resp.json();
+        if (data.code !== 0) throw new Error(data.msg || '验证码发送失败');
+      },
     }),
+
+    // 持久化用户信息
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }), // 持久化用户信息
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );

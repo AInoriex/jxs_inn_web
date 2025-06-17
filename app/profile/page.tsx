@@ -3,17 +3,17 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
-import { UserService } from '@/lib/user'; // 新增：导入用户服务类
+import { UserService } from '@/lib/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function PersonalInfoPage() {
-  const { user, updateUser } = useAuth(); // 修改：获取setUser方法用于更新用户状态
+  const { user, updateUser } = useAuth();
   const [ name, setName ] = useState(user?.name || '');
   const [ isEditing, setIsEditing ] = useState(false);
-  const [ isSubmitting, setIsSubmitting ] = useState(false); // 新增：提交状态控制
+  const [ isSubmitting, setIsSubmitting ] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

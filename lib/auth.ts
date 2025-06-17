@@ -21,7 +21,7 @@ type AuthStore = {
   register: (name: string, email: string, password: string) => void;
   logout: () => void;
   checkAuth: () => void;
-  updateUser: (newUser: Partial<User>) => void; // 新增：用户状态更新方法
+  updateUser: (newUser: Partial<User>) => void;
 };
 
 export const useAuth = create<AuthStore>()(
@@ -148,7 +148,7 @@ export const useAuth = create<AuthStore>()(
           set({ user: null });
         }
       },
-      // 新增：用户状态更新方法（支持部分更新）
+      // 用户状态更新方法（支持部分更新）
       updateUser: (newUser) => {
         set(state => ({ 
           user: state.user ? { ...state.user, ...newUser } : null 

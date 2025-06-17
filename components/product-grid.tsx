@@ -60,7 +60,7 @@ export function ProductGrid() {
   // 获取商品列表错误展示
   if (error) {
     // return <div className="text-center py-8 text-red-500">{error}</div>;
-    return <div className="text-center py-8 text-red-500">获取商品列表失败，请稍后重试</div>;
+    return <div className="text-center py-8 text-black-500">哎呀~！客栈正在开张，请稍后再试...</div>;
   }
 
   // 加入购物车

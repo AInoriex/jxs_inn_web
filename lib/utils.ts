@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useAuth } from '@/lib/auth';  // 新增：导入auth store
+import { useAuth } from '@/lib/auth';
 
 const ROUTER_SERVICE_HOST = 'http://127.0.0.1:32135'; // 后续可改为配置文件读取
 // const STREAM_SERVICE_HOST = 'http://127.0.0.1:23145'; // 后续可改为配置文件读取
@@ -23,7 +23,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// 新增：通用token重试工具（最大3次）
+// 通用token重试工具（最大3次）
 export async function withTokenRetry<T>(request: () => Promise<T>): Promise<T> {
   let retry = 0;
   const maxRetry = 3;

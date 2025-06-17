@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
           />
         </div>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? '更新中，请稍等片刻...' : '更新密码'}
+          {isLoading ? '更新中...' : '更新密码'}
         </Button>
       </form>
     </div>

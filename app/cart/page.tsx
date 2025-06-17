@@ -71,7 +71,7 @@ export default function CartPage() {
     };
 
     loadCartData();
-}, [checkAuth]); // 仅依赖 checkAuth（需保证其引用稳定）
+}, [checkAuth]);
 
  // 使用 useMemo 计算小计
   const subtotal = useMemo(() => {

@@ -277,7 +277,7 @@ export default function InventoryPage() {
                       </div>
 
                       {/* 播放控制按钮 */}
-                      <div className="flex items-center justify-center gap-3"> {/* 新增 justify-center 实现水平居中 */}
+                      <div className="flex items-center justify-center gap-3">
                         <SkipBack onClick={handleRewind} />
                         <div onClick={handlePlayPause} >
                           {audioState.playing? <Pause /> : <Play />}

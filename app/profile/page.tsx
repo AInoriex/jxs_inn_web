@@ -17,14 +17,12 @@ export default function PersonalInfoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true); // 开始提交时禁用按钮
-
+    
+    setIsSubmitting(true);
     try {
       await UserService.updateUserInfo(name, user?.avatar || '');
-      
       // 更新全局用户状态（同步页面显示）
       if (user) updateUser({ name }); 
-      
       setIsEditing(false);
       toast.success('信息更新成功');
     } catch (error) {

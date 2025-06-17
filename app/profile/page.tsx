@@ -1,23 +1,38 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
+import { UserService } from '@/lib/user'; // 新增：导入用户服务类
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function PersonalInfoPage() {
-  const { user, updateUser } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user?.name || '');
+  const { user, updateUser } = useAuth(); // 修改：获取setUser方法用于更新用户状态
+  const [ name, setName ] = useState(user?.name || '');
+  const [ isEditing, setIsEditing ] = useState(false);
+  const [ isSubmitting, setIsSubmitting ] = useState(false); // 新增：提交状态控制
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({ name });
-    setIsEditing(false);
-    toast.success('信息更新成功');
+    setIsSubmitting(true); // 开始提交时禁用按钮
+
+    try {
+      await UserService.updateUserInfo(name, user?.avatar || '');
+      
+      // 更新全局用户状态（同步页面显示）
+      if (user) updateUser({ name }); 
+      
+      setIsEditing(false);
+      toast.success('信息更新成功');
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '更新用户信息失败';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false); // 无论成功失败都恢复按钮状态
+    }
   };
 
   if (!user) return null;
@@ -42,7 +57,7 @@ export default function PersonalInfoPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">贵客名字</Label>
+          <Label htmlFor="name">名字</Label>
           <Input
             id="name"
             value={name}
@@ -56,7 +71,12 @@ export default function PersonalInfoPage() {
         </div>
         {isEditing ? (
           <div className="flex gap-2">
-            <Button type="submit">保存更改</Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} // 提交时禁用按钮
+            >
+              {isSubmitting ? '保存中...' : '保存更改'}
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -64,6 +84,7 @@ export default function PersonalInfoPage() {
                 setName(user.name);
                 setIsEditing(false);
               }}
+              disabled={isSubmitting} // 提交时禁用按钮
             >
               取消
             </Button>

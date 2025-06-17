@@ -38,7 +38,7 @@ export async function withTokenRetry<T>(request: () => Promise<T>): Promise<T> {
         error.message.includes('401') &&
         error['responseHeaders']?.get('refresh-token') === '1'
       ) {
-        await useAuth.getState().refresh_token();  // 调用auth的刷新方法
+        await useAuth.getState().refreshToken();  // 调用auth的刷新方法
         await new Promise(resolve => setTimeout(resolve, 200));  // 延迟200ms
         retry++;
       } else {

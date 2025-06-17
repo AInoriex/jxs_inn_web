@@ -17,12 +17,11 @@ export type User = {
 
 type AuthStore = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => void;
+  register: (name: string, email: string, password: string) => void;
   logout: () => void;
-  updateUser: (user: Partial<User>) => void;
-  updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => void;
+  updateUser: (newUser: Partial<User>) => void; // 新增：用户状态更新方法
 };
 
 export const useAuth = create<AuthStore>()(
@@ -101,7 +100,7 @@ export const useAuth = create<AuthStore>()(
 
       // 刷新token
       // 请求报错401重新刷新token
-      refresh_token: async () => {
+      refreshToken: async () => {
         try {
           const refreshResp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/auth/refresh_token`, {
             method: 'POST',
@@ -118,20 +117,6 @@ export const useAuth = create<AuthStore>()(
         }
       },
 
-      // 更新用户信息
-      updateUser: (userData) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        }));
-      },
-
-      // 更新密码（保持原有逻辑，后续可补充API调用）
-      updatePassword: async (oldPassword: string, newPassword: string) => {
-        if (oldPassword !== 'mock-password') { // 实际应调用密码修改接口
-          throw new Error('旧密码错误');
-        }
-      },
-
       // 初始化检查登录态（用于页面刷新后保持登录状态）
       checkAuth: async () => {
         const token = localStorage.getItem('token');
@@ -142,7 +127,7 @@ export const useAuth = create<AuthStore>()(
             headers: { Authorization: token },
           });
 
-          if (!userResp.ok) throw new Error('用户信息接口请求失败');
+          if (!userResp.ok) throw new Error('请求用户信息失败');
           const userData = await userResp.json();
 
           if (userData.code === 0) {
@@ -163,10 +148,16 @@ export const useAuth = create<AuthStore>()(
           set({ user: null });
         }
       },
+      // 新增：用户状态更新方法（支持部分更新）
+      updateUser: (newUser) => {
+        set(state => ({ 
+          user: state.user ? { ...state.user, ...newUser } : null 
+        }));
+      },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }), // 仅持久化用户信息
+      partialize: (state) => ({ user: state.user }), // 持久化用户信息
     }
   )
 );

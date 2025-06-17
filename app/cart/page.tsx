@@ -194,15 +194,22 @@ export default function CartPage() {
     setIsPaymentVisible(false);
   };
 
-  // 复制订单ID到剪贴板
-  const copyOrderId = async () => {
+  // 处理订单咨询
+  const handleOrderQuery = async () => {
     if (paymentData?.orderId) {
       try {
+        // 复制订单ID到剪贴板
         await navigator.clipboard.writeText(paymentData.orderId);
-        toast.info('已复制订单ID，请联系客服');
+        toast.info('已复制订单ID，即将联系客服邮箱`judymike2025@outlook.com`...');
+        // 延迟2秒
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        // 跳转新页面编写邮件咨询客服
+        window.open(`mailto:judymike2025@outlook.com?subject=我想咨询关于订单 ${paymentData.orderId} 的问题`,'_blank')
       } catch (err) {
-        toast.error('复制失败，请手动复制');
+        toast.error(`当前订单ID为'${paymentData.orderId}'，请联系客服邮箱: judymike2025@outlook.com`);
       }
+    } else {
+      toast.error('获取订单ID失败，请联系客服邮箱: judymike2025@outlook.com');
     }
   };
 
@@ -227,11 +234,8 @@ export default function CartPage() {
         />
 
         {/* 订单疑惑文本 */}
-        <div 
-          onClick={copyOrderId}
-          className="text-sm text-gray-500 italic cursor-pointer mb-6"
-        >
-          ❔ 对此订单有疑惑，请联系客服
+        <div onClick={handleOrderQuery} className="text-sm text-gray-500 italic cursor-pointer mb-6">
+          ❔ 对此订单有疑惑，请点击我联系客服
         </div>
 
         {/* 取消支付按钮 */}

@@ -38,6 +38,26 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  // 初始化播放器
+  const [audioState, setAudioState] = useState<AudioPlayerState>({
+    playing: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 0.8,
+    muted: false,
+    seeking: false,
+  });
+  const playerRef = useRef<ReactPlayer | null>(null); // 播放器ref
+  
+  // 清理音频URL
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl); // 释放资源
+      }
+    };
+  }, [audioUrl]);
+
   // 加载藏品数据
   useEffect(() => {
     const loadInventoryData = async () => {
@@ -52,9 +72,9 @@ export default function InventoryPage() {
           return;
         }
 
-        const apiItems = await InventoryService.getList();
+        const respItems = await InventoryService.getList();
         // 转换接口字段并补充流媒体文件名
-        const pageItems = apiItems.map((item: InventoryItem) => ({
+        const pageItems: PageInventoryItem[] = respItems.map((item: InventoryItem) => ({
           id: item.productId,
           title: item.title,
           description: item.description,
@@ -108,17 +128,6 @@ export default function InventoryPage() {
       </div>
     );
   }
-
-  // 播放器
-  const [audioState, setAudioState] = useState<AudioPlayerState>({
-    playing: false,
-    currentTime: 0,
-    duration: 0,
-    volume: 0.8,
-    muted: false,
-    seeking: false,
-  });
-  const playerRef = useRef<ReactPlayer | null>(null); // 播放器ref
 
   // 播放/暂停
   const handlePlayPause = () => {
@@ -188,15 +197,6 @@ export default function InventoryPage() {
     toast.error(`音频播放失败：${error.message}`);
     setAudioState(prev => ({ ...prev, playing: false }));
   };
-
-  // 清理音频URL
-  useEffect(() => {
-    return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl); // 释放资源
-      }
-    };
-  }, [audioUrl]);
 
   return (
     <div className="container mx-auto px-4 py-8">

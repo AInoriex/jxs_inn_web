@@ -1,20 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import { Card } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { InventoryService, InventoryItem as ApiInventoryItem } from '@/lib/inventory';
-
-import ReactPlayer from 'react-player'; // 引入ReactPlayer
-import { Slider } from '@/components/ui/slider'; // 使用项目UI库的滑块组件
 import { Play, Pause, SkipForward, SkipBack, VolumeX, Volume2 } from 'lucide-react';
+import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+import ReactPlayer from 'react-player'; // 引入ReactPlayer
+import { toast } from 'sonner';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider'; // 使用项目UI库的滑块组件
+import { useAuth } from '@/lib/auth';
+import { InventoryService, InventoryItem } from '@/lib/inventory';
 
 // 转换接口类型到页面使用类型
 type PageInventoryItem = {
@@ -37,114 +32,47 @@ type AudioPlayerState = {
 };
 
 export default function InventoryPage() {
-  const [selectedItem, setSelectedItem] = useState<PageInventoryItem | null>(null);
+  const { user, checkAuth } = useAuth();
   const [items, setItems] = useState<PageInventoryItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<PageInventoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const [audioState, setAudioState] = useState<AudioPlayerState>({
-    playing: false,
-    currentTime: 0,
-    duration: 0,
-    volume: 0.8,
-    muted: false,
-    seeking: false,
-  });
-  const playerRef = useRef<ReactPlayer | null>(null); // 播放器ref
-
-  // 处理播放/暂停
-  const handlePlayPause = () => {
-    setAudioState(prev => ({ ...prev, playing: !prev.playing }));
-  };
-
-  // 处理进度条变化
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Radix Slider 的 value 是数组格式（支持多滑块），这里取第一个值
-    const newValue = parseFloat(e.target.value);
-    if (playerRef.current && !isNaN(newValue)) {
-      setAudioState(prev => ({ ...prev, currentTime: newValue }));
-    }
-  };
-  
-  // 处理进度条拖动开始（补充鼠标事件类型）
-  const handleSeekStart = (e: React.MouseEvent) => {
-    setAudioState(prev => ({ ...prev, seeking: true }));
-  };
-
-  // 处理进度条拖动结束
-  const handleSeekEnd = (e: React.MouseEvent) => {
-    if (playerRef.current && !isNaN(audioState.currentTime)) {
-      playerRef.current.seekTo(audioState.currentTime);
-      setAudioState(prev => ({ ...prev, seeking: false }));
-    }
-  };
-
-  // 处理快进10秒
-  const handleForward = () => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(audioState.currentTime + 10);
-    }
-  };
-
-  // 处理后退10秒
-  const handleRewind = () => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(Math.max(audioState.currentTime - 10, 0));
-    }
-  };
-
-  // 处理音量变化
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setAudioState(prev => ({ ...prev, volume: newVolume, muted: false }));
-  };
-
-  // 处理静音切换
-  const handleMute = () => {
-    setAudioState(prev => ({ ...prev, muted: !prev.muted }));
-  };
-
-  // 处理播放进度更新（来自ReactPlayer）
-  const handleProgress = (progress: { played: number; playedSeconds: number; loaded: number }) => {
-    if (!audioState.seeking) {
-      setAudioState(prev => ({
-        ...prev,
-        currentTime: progress.playedSeconds,
-        duration: progress.playedSeconds / progress.played || 0 // 处理初始duration为0的情况
-      }));
-    }
-  };
-
-  // 处理播放错误
-  const handleError = (error: Error) => {
-    toast.error(`音频播放失败：${error.message}`);
-    setAudioState(prev => ({ ...prev, playing: false }));
-  };
-
-  // 获取藏品数据
+  // 加载藏品数据
   useEffect(() => {
-    const fetchData = async () => {
+    const loadInventoryData = async () => {
+      setLoading(true);
       try {
+        // 主动同步用户状态（替代依赖 user 的异步变化）
+        await checkAuth();
+
+        // 同步后再次检查登录状态
+        if (!user) {
+          toast.warning('请登录后查看');
+          return;
+        }
+
         const apiItems = await InventoryService.getList();
-        // 转换接口字段并补充流媒体文件名（示例假设文件名与productId一致）
-        const pageItems = apiItems.map((item: ApiInventoryItem) => ({
+        // 转换接口字段并补充流媒体文件名
+        const pageItems = apiItems.map((item: InventoryItem) => ({
           id: item.productId,
           title: item.title,
           description: item.description,
           imageUrl: item.imageUrl,
           purchaseAt: item.purchaseAt,
-          streamFilename: `${item.productId}.m3u8` // 根据实际业务调整命名规则
+          streamFilename: `${item.productId}.m3u8`
         }));
         setItems(pageItems);
       } catch (error) {
-        toast.error('获取藏品失败，请稍后重试');
-        console.error(`获取藏品失败，错误信息：${error}`);
+        toast.error('获取藏品信息失败，请稍后重试');
+        // console.error(`获取藏品信息失败，错误信息：${error}`);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+
+    loadInventoryData();
+  }, [checkAuth]);
 
   // 点击藏品详情信息
   const handleItemClick = async (item: PageInventoryItem) => {
@@ -158,6 +86,109 @@ export default function InventoryPage() {
     }
   };
 
+  // 页面状态：加载中
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 text-center">加载中...</div>
+      </div>
+    );
+  }
+
+  // 页面状态：空藏品展示
+  if (items.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center">
+          <div className="text-center">
+            <p className="text-2xl font-medium text-gray-800 mb-2">这里空空如也...</p>
+            <p className="text-gray-500">快去挑选喜欢的商品，把它们加入你的藏品吧~</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 播放器
+  const [audioState, setAudioState] = useState<AudioPlayerState>({
+    playing: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 0.8,
+    muted: false,
+    seeking: false,
+  });
+  const playerRef = useRef<ReactPlayer | null>(null); // 播放器ref
+
+  // 播放/暂停
+  const handlePlayPause = () => {
+    setAudioState(prev => ({ ...prev, playing: !prev.playing }));
+  };
+
+  // 进度条变化
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Radix Slider 的 value 是数组格式（支持多滑块），这里取第一个值
+    const newValue = parseFloat(e.target.value);
+    if (playerRef.current && !isNaN(newValue)) {
+      setAudioState(prev => ({ ...prev, currentTime: newValue }));
+    }
+  };
+
+  // 进度条拖动开始（补充鼠标事件类型）
+  const handleSeekStart = (e: React.MouseEvent) => {
+    setAudioState(prev => ({ ...prev, seeking: true }));
+  };
+
+  // 进度条拖动结束
+  const handleSeekEnd = (e: React.MouseEvent) => {
+    if (playerRef.current && !isNaN(audioState.currentTime)) {
+      playerRef.current.seekTo(audioState.currentTime);
+      setAudioState(prev => ({ ...prev, seeking: false }));
+    }
+  };
+
+  // 快进10秒
+  const handleForward = () => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(audioState.currentTime + 10);
+    }
+  };
+
+  // 后退10秒
+  const handleRewind = () => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(Math.max(audioState.currentTime - 10, 0));
+    }
+  };
+
+  // 音量变化
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setAudioState(prev => ({ ...prev, volume: newVolume, muted: false }));
+  };
+
+  // 静音切换
+  const handleMute = () => {
+    setAudioState(prev => ({ ...prev, muted: !prev.muted }));
+  };
+
+  // 播放进度更新（来自ReactPlayer）
+  const handleProgress = (progress: { played: number; playedSeconds: number; loaded: number }) => {
+    if (!audioState.seeking) {
+      setAudioState(prev => ({
+        ...prev,
+        currentTime: progress.playedSeconds,
+        duration: progress.playedSeconds / progress.played || 0 // 初始duration为0的情况
+      }));
+    }
+  };
+
+  // 播放错误
+  const handleError = (error: Error) => {
+    toast.error(`音频播放失败：${error.message}`);
+    setAudioState(prev => ({ ...prev, playing: false }));
+  };
+
   // 清理音频URL
   useEffect(() => {
     return () => {
@@ -166,21 +197,6 @@ export default function InventoryPage() {
       }
     };
   }, [audioUrl]);
-
-  if (loading) {
-    return <div className="container mx-auto px-4 py-8 text-center">加载中...</div>;
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-2xl font-medium text-gray-800 mb-2">这里空空如也...</p>
-          <p className="text-gray-500">快去挑选喜欢的商品，把它们加入你的藏品吧~</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -254,7 +270,7 @@ export default function InventoryPage() {
                       height="auto"
                       style={{ display: 'none' }} // 隐藏默认播放器 UI
                     />
-                    
+
                     {/* 自定义播放器控制界面 */}
                     <div className="flex flex-col gap-3">
                       {/* 进度条 */}
@@ -280,11 +296,11 @@ export default function InventoryPage() {
                       <div className="flex items-center justify-center gap-3">
                         <SkipBack onClick={handleRewind} />
                         <div onClick={handlePlayPause} >
-                          {audioState.playing? <Pause /> : <Play />}
+                          {audioState.playing ? <Pause /> : <Play />}
                         </div>
                         <SkipForward onClick={handleForward} />
                       </div>
-                      
+
                       {/* 音量控制 */}
                       <div className="flex items-center justify-center gap-3">
                         <div onClick={handleMute}>

@@ -52,15 +52,26 @@ export function ProductGrid() {
     loadProducts();
   }, []);
 
-  // 优化加载状态展示
+  // 页面状态：加载中
   if (isLoading) {
-    return <div className="text-center py-8">加载中...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 text-center">加载中...</div>
+      </div>
+    );
   }
 
   // 获取商品列表错误展示
-  if (error) {
+  if (error || products.length === 0) {
     // return <div className="text-center py-8 text-red-500">{error}</div>;
-    return <div className="text-center py-8 text-black-500">哎呀~！客栈正在开张，请稍后再试...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-2xl font-medium text-gray-800 mb-2">哎呀~！客栈还没开业？</p>
+          <p className="text-gray-500">店小二正在收拾店面，这位客官请稍等片刻...</p>
+        </div>
+      </div>
+    );
   }
 
   // 加入购物车
@@ -105,8 +116,8 @@ export function ProductGrid() {
               </p>
               <div className="mt-4 flex items-center justify-between">
                 <span className="font-semibold">${product.price}</span>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => handleAddToCart(product.id)}
                   disabled={isAddingToCart}
                 >
@@ -142,7 +153,7 @@ export function ProductGrid() {
                 </div>
                 <p className="text-sm">{selectedProduct.description}</p>
                 <div className="flex gap-4">
-                  <Button 
+                  <Button
                     className="flex-1"
                     onClick={() => handleAddToCart(selectedProduct.id)}
                     disabled={isAddingToCart}

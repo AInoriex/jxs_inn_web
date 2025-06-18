@@ -1,5 +1,5 @@
 import { ROUTER_SERVICE_HOST } from '@/lib/utils';
-import { withTokenRetry } from '@/lib/utils';
+import { withTokenRetry, WithResponseHeadersError } from '@/lib/utils';
 
 export class UserService {
   /**
@@ -13,7 +13,7 @@ export class UserService {
     if (!token) throw new Error('用户未登录');
 
     return withTokenRetry(async () => {
-      const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/update_info`, {
+      const resp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/update_info`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -22,14 +22,14 @@ export class UserService {
         body: JSON.stringify({ name, avatar_url })
       });
 
-      if (res.status === 401) {
-        const error = new Error('401 Unauthorized');
-        error['responseHeaders'] = res.headers;
+      if (resp.status === 401) {
+        const error = new Error('401 Unauthorized') as WithResponseHeadersError;
+        error.responseHeaders = resp.headers; 
         throw error;
       }
 
-      if (!res.ok) throw new Error('更新用户信息请求失败');
-      const jsonData = await res.json();
+      if (!resp.ok) throw new Error('更新用户信息请求失败');
+      const jsonData = await resp.json();
       if (jsonData.code !== 0) throw new Error(jsonData.msg || '更新用户信息失败');
     });
   }
@@ -45,7 +45,7 @@ export class UserService {
     if (!token) throw new Error('用户未登录');
 
     return withTokenRetry(async () => {
-      const res = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/reset_password`, {
+      const resp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/reset_password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,14 +54,14 @@ export class UserService {
         body: JSON.stringify({ old_password, new_password })
       });
 
-      if (res.status === 401) {
-        const error = new Error('401 Unauthorized');
-        error['responseHeaders'] = res.headers;
+      if (resp.status === 401) {
+        const error = new Error('401 Unauthorized') as WithResponseHeadersError;
+        error.responseHeaders = resp.headers;
         throw error;
       }
 
-      if (!res.ok) throw new Error('重置密码请求失败');
-      const jsonData = await res.json();
+      if (!resp.ok) throw new Error('重置密码请求失败');
+      const jsonData = await resp.json();
       if (jsonData.code !== 0) throw new Error(jsonData.msg || '重置密码失败');
     });
   }

@@ -18,8 +18,9 @@ export type User = {
 type AuthStore = {
   user: User | null;
   login: (email: string, password: string) => void;
-  register: (name: string, email: string, password: string, verifyCode: string) => void;
   logout: () => void;
+  register: (name: string, email: string, password: string, verifyCode: string) => void;
+  refreshToken: () => void;
   checkAuth: () => void;
   updateUser: (newUser: Partial<User>) => void;
   sendEmailVerifyCode: (email: string) => Promise<void>;

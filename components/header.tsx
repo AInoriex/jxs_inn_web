@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleUserRound, Menu, Moon, LogOut, ShoppingBag, ShoppingCart, Store, Sun } from 'lucide-react';
+import { CircleUserRound, Menu, Moon, LogOut, LucideHeartHandshake, ShoppingBag, ShoppingCart, Store, Sun } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -32,7 +32,7 @@ export function Header() {
     <header className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Store className="h-6 w-6" />
+          <LucideHeartHandshake className="h-6 w-6" />
           <span className="font-semibold text-lg">江心上客栈</span>
         </Link>
 

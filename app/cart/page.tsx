@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Minus, Plus, X } from 'lucide-react';
+import { Minus, Plus, X, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
@@ -222,7 +222,7 @@ export default function CartPage() {
     >
       <DialogContent className="p-6 text-center">
         {/* 倒计时文本 */}
-        <div className="text-lg font-medium mb-6">
+        <div className="text-lg font-medium mb-2">
           请于 {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')} 之内完成支付
         </div>
 
@@ -230,12 +230,18 @@ export default function CartPage() {
         <img
           src={`data:image/png;base64,${paymentData.qrCode}`}
           alt="支付二维码"
-          className="w-48 h-48 mx-auto mb-6 rounded-lg"
+          className="w-48 h-48 mx-auto mb-2 rounded-lg"
         />
 
         {/* 订单疑惑文本 */}
-        <div onClick={handleOrderQuery} className="text-sm text-gray-500 italic cursor-pointer mb-6">
+        <div className="text-sm text-gray-500 italic cursor-pointer flex items-center justify-center" onClick={handleOrderQuery}>
           ❔ 对此订单有疑惑，请点击我联系客服
+        </div>
+
+        {/* 付款须知 */}
+        <div className="text-sm text-red-500 underline mb-2 cursor-pointer flex items-center justify-center">
+          <TriangleAlert className="h-5 w-5 flex-shrink-0" />
+          虚拟商品一经售出，概不退换退款
         </div>
 
         {/* 取消支付按钮 */}

@@ -18,11 +18,12 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
+  const [isSendingVerifyCode, setIsSendingVerifyCode] = useState(false);
+  const [countdown, setCountdown] = useState(0); // 邮箱验证码倒计时（防止重复发送）
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSendingVerifyCode, setIsSendingVerifyCode] = useState(false);
-  const [countdown, setCountdown] = useState(0); // 邮箱验证码倒计时（防止重复发送）
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   // 发送邮箱验证码
   const sendVerifyCode = async () => {
@@ -60,6 +61,10 @@ export default function RegisterPage() {
     }
     if (!verifyCode) {
       toast.error('请输入邮箱验证码');
+      return;
+    }
+    if (!agreeTerms) { // 新增勾选验证
+      toast.error('请勾选"我保证我注册该账号时已年满18岁"');
       return;
     }
 
@@ -189,8 +194,21 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* 注册条款 */}
+            <div className="flex items-center justify-center">
+              <div>
+                  <Input
+                    type="checkbox"
+                    checked={agreeTerms} 
+                    onChange={() => setAgreeTerms(!agreeTerms)}
+                    disabled={isLoading}
+                  />
+              </div> 
+              <Label className="ml-2 text-sm text-red-500 font-bold underline">我保证我注册该账号时已年满18岁</Label>
+            </div>
+
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : '创建账号'}
+              {isLoading ? '创建中...' : '注册'}
             </Button>
           </form>
 

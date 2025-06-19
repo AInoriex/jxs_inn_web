@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 import { UserService } from '@/lib/user';
+import { CircleUserRound } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,10 +42,14 @@ export default function PersonalInfoPage() {
         <Avatar className="h-20 w-20">
           <AvatarImage src={user.avatar} />
           <AvatarFallback>
-            {user.name
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
+            {!user?.avatar ? (
+              <CircleUserRound className="h-full w-full" stroke-width="1" />
+            ) : (
+              user.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+            )}
           </AvatarFallback>
         </Avatar>
         <div>

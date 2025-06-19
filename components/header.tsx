@@ -1,20 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { CircleUserRound, Menu, Moon, LogOut, ShoppingBag, ShoppingCart, Store, Sun } from 'lucide-react';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import { Store, ShoppingCart, Sun, Moon, Menu, LogOut, ShoppingBag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useAuth } from '@/lib/auth'; // 导入auth方法
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useEffect } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/lib/auth';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -27,8 +22,9 @@ export function Header() {
     checkAuth();
   }, [checkAuth]);
 
+  // logout（自动清除token和状态）
   const handleLogout = () => {
-    logout(); // 直接调用auth的logout方法（自动清除token和状态）
+    logout();
     router.push('/');
   };
 
@@ -65,7 +61,7 @@ export function Header() {
           </SheetContent>
         </Sheet>
 
-        {/* Desktop Navigation - 保持不变 */}
+        {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
             <Store className="h-5 w-5" />
@@ -97,12 +93,16 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} /> {/* 直接使用user.avatar */}
+                    <AvatarImage src={user.avatar} />
                     <AvatarFallback>
-                      {user.name
-                        ?.split(' ')
-                        .map((n) => n[0])
-                        .join('')}
+                      {!user?.avatar ? (
+                        <CircleUserRound className="h-full w-full" stroke-width="1" />
+                      ) : (
+                        user.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                      )}
                     </AvatarFallback>
                   </Avatar>
                 </Button>

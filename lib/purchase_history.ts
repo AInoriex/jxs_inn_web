@@ -38,17 +38,7 @@ export class PurchaseHistoryService {
       if (!resp.ok) throw new Error('请求购买历史记录失败');
       const jsonData = await resp.json();
       if (jsonData.code !== 0) throw new Error(jsonData.msg || '查询购买历史记录失败');
-  
-      // 格式转换
-      // const purchaseHistoryItems: PurchaseHistoryItem[] = jsonData.data.result.map((item: any) => ({
-      //   id: item.id,
-      //   orderId: item.order_id,
-      //   productName: item.product_name,
-      //   finalAmount: item.final_amount,
-      //   quantity: item.quantity,
-      //   purchaseStatusDesc: item.purchase_status_desc,
-      //   purchaseDate: item.purchase_date,
-      // }));
+      
       return jsonData.data.result;
     });
   }

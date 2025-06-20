@@ -28,7 +28,7 @@ interface UpdateCartItemParams {
 export class CartService {
   /**
    * 获取购物车列表
-   * @returns 购物车项数组
+   * @returns CartItem[]
    */
   static async GetCartList(): Promise<CartItem[]> {
     const token = localStorage.getItem('token');
@@ -36,6 +36,7 @@ export class CartService {
 
     return withTokenRetry(async () => {  // 使用通用重试工具
       const resp = await fetch(`${ROUTER_SERVICE_HOST}/v1/eshop_api/user/cart/list`, {
+        method: 'GET',
         headers: { Authorization: token }
       });
 
@@ -50,8 +51,8 @@ export class CartService {
       const jsonData = await resp.json();
       if (jsonData.code !== 0) throw new Error(jsonData.msg || '获取购物车列表失败');
 
-      console.log('CartService.getList: ', jsonData.data);
-      console.log('CartService.getList.result: ', jsonData.data.result);
+      // console.log('CartService.getList: ', jsonData.data);
+      // console.log('CartService.getList.result: ', jsonData.data.result);
       return jsonData.data.result;
     });
   }

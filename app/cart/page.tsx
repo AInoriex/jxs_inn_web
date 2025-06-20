@@ -71,7 +71,7 @@ export default function CartPage() {
     };
 
     loadCartData();
-}, [checkAuth]);
+  }, [checkAuth]);
 
  // 使用 useMemo 计算小计
   const subtotal = useMemo(() => {

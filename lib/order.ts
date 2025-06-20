@@ -6,12 +6,14 @@ export type OrderItem = {
   quantity: number;    // 购买数量
 };
 
+// 创建订单请求体
 interface CreateOrderParams {
   itemList: OrderItem[];                  // 商品列表
   paymentMethod: 'qrcode' | 'bank' | 'point'; // 支付方式
   paymentGatewayType: 10 | 11 | 12;       // 支付网关类型（10:原力通, 11:支付宝, 12:微信）
 }
 
+// 创建订单响应体
 export type CreateOrderResp = {
   orderId: string;
   qrCode: string;

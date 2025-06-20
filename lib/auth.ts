@@ -7,12 +7,6 @@ export type User = {
   email: string;
   name: string;
   avatar: string;
-  purchaseHistory: {
-    id: string;
-    productName: string;
-    price: number;
-    purchaseDate: string;
-  }[];
 };
 
 type AuthStore = {
@@ -69,7 +63,6 @@ export const useAuth = create<AuthStore>()(
               email: userData.data.email,
               name: userData.data.name,
               avatar: userData.data.avatar_url,
-              purchaseHistory: [], // 购买历史需通过其他接口获取（后续补充）
             },
           });
         } catch (error) {
@@ -141,7 +134,6 @@ export const useAuth = create<AuthStore>()(
                 email: userData.data.email,
                 name: userData.data.name,
                 avatar: userData.data.avatar_url,
-                purchaseHistory: [],
               },
             });
           } else {

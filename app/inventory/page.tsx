@@ -232,94 +232,113 @@ export default function InventoryPage() {
         setAudioUrl(null); // 关闭对话框时停止播放
         setAudioState(prev => ({ ...prev, playing: false, currentTime: 0 }));
       }}>
-        <DialogContent className="max-w-4xl min-h-[450px]"> {/* 自定义尺寸 */}
-          <DialogHeader>
+        <DialogContent className="max-w-4xl min-w-[375px] min-h-[667px]">
+          {/* <DialogHeader>
             <DialogTitle>{selectedItem?.title}</DialogTitle>
-          </DialogHeader>
+          </DialogHeader> */}
           {selectedItem && (
-            <div className="grid md:grid-cols-2 gap-6 mt-4">
-              {/* 藏品信息栏 */}
-              <div className="space-y-4">
-                <div className="aspect-video relative rounded-lg overflow-hidden">
-                  <Image
-                    src={selectedItem.imageUrl}
-                    alt={selectedItem.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="mt-2 text-gray-700">{selectedItem.description}</p>
-                </div>
+            <div className="flex flex-col gap-6 mt-4">
+              {/* 圆形旋转图片展示 */}
+              <div className={`w-image h-image aspect-square relative rounded-full overflow-hidden ${audioState.playing ? 'animate-spin-slow' : ''} mx-auto`}>
+                <style jsx>{`
+                  .animate-spin-slow { 
+                    animation: spin 20s linear infinite;
+                  }
+                  @keyframes spin {
+                    from {
+                      transform: rotate(0deg);
+                    }
+                    to {
+                      transform: rotate(360deg);
+                    }
+                  }
+                  .w-image { width: 400px; }
+                  .h-image { height: 400px; }
+                  .aspect-square { aspect-ratio: 1; }
+                `}</style>
+                <Image
+                  src={selectedItem.imageUrl}
+                  alt={selectedItem.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* 字幕展示 */}
+              <div className="text-center">
+                  <h3 className="font-semibold text-2xl">{selectedItem.title}</h3>
+              </div>
+              <div className="border rounded-lg p-4 bg-muted">
+                <p className="text-sm text-center text-muted-foreground">字幕君正在赶来的路上...</p>
               </div>
 
               {/* 藏品音频播放器 */}
-              <div className="flex flex-col justify-center">
-                {audioUrl ? (
-                  <div className="border rounded-lg p-4 bg-muted">
-                    <ReactPlayer
-                      ref={playerRef}
-                      url={audioUrl}
-                      playing={audioState.playing}
-                      volume={audioState.volume}
-                      muted={audioState.muted}
-                      onProgress={handleProgress}
-                      onError={handleError}
-                      width="100%"
-                      height="auto"
-                      style={{ display: 'none' }} // 隐藏默认播放器 UI
-                    />
+              {audioUrl ? (
+                <div className="border rounded-lg p-4 bg-muted">
+                  <ReactPlayer
+                    ref={playerRef}
+                    url={audioUrl}
+                    playing={audioState.playing}
+                    volume={audioState.volume}
+                    muted={audioState.muted}
+                    onProgress={handleProgress}
+                    onError={handleError}
+                    width="100%"
+                    height="auto"
+                    style={{ display: 'none' }} // 隐藏默认播放器 UI
+                  />
 
-                    {/* 自定义播放器控制界面 */}
-                    <div className="flex flex-col gap-3">
-                      {/* 进度条 */}
-                      <div className="flex items-center justify-center gap-3">
-                        <span className="text-sm">
-                          {new Date(audioState.currentTime * 1000).toISOString().substr(14, 5)}
-                        </span>
-                        <Slider
-                          min={0}
-                          max={audioState.duration}
-                          value={[audioState.currentTime]}
-                          onMouseDown={handleSeekStart}
-                          onValueChange={handleSeekChange}
-                          onMouseUp={handleSeekEnd}
-                          className="flex-1"
-                        />
-                        <span className="text-sm">
-                          {new Date(audioState.duration * 1000).toISOString().substr(14, 5)}
-                        </span>
-                      </div>
+                  {/* 自定义播放器控制界面 */}
+                  <div className="flex flex-col gap-3">
+                    {/* 进度条 */}
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-sm">
+                        {new Date(audioState.currentTime * 1000).toISOString().substr(14, 5)}
+                      </span>
+                      <Slider
+                        min={0}
+                        max={audioState.duration}
+                        value={[audioState.currentTime]}
+                        onMouseDown={handleSeekStart}
+                        onValueChange={handleSeekChange}
+                        onMouseUp={handleSeekEnd}
+                        className="flex-1"
+                        trackHeight="h-3"
+                      />
+                      <span className="text-sm">
+                        {new Date(audioState.duration * 1000).toISOString().substr(14, 5)}
+                      </span>
+                    </div>
 
-                      {/* 播放控制按钮 */}
-                      <div className="flex items-center justify-center gap-3">
-                        <SkipBack onClick={handleRewind} />
-                        <div onClick={handlePlayPause} >
-                          {audioState.playing ? <Pause /> : <Play />}
-                        </div>
-                        <SkipForward onClick={handleForward} />
+                    {/* 播放控制按钮 */}
+                    <div className="flex items-center justify-center gap-3">
+                      <SkipBack onClick={handleRewind} />
+                      <div onClick={handlePlayPause} >
+                        {audioState.playing ? <Pause /> : <Play />}
                       </div>
+                      <SkipForward onClick={handleForward} />
+                    </div>
 
-                      {/* 音量控制 */}
-                      <div className="flex items-center justify-center gap-3">
-                        <div onClick={handleMute}>
-                          {audioState.muted ? <VolumeX /> : <Volume2 />}
-                        </div>
-                        <Slider
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          value={[audioState.volume]}
-                          onValueChange={handleVolumeChange}
-                          className="flex-1"
-                        />
+                    {/* 音量控制 */}
+                    <div className="flex items-center justify-center justify-center gap-3 w-2/3 mx-auto">
+                      <div onClick={handleMute}> 
+                        {audioState.muted ? <VolumeX /> : <Volume2 />}
                       </div>
+                      <Slider
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={[audioState.volume]}
+                        onValueChange={handleVolumeChange}
+                        className="flex-1"
+                        trackHeight="h-1"
+                      />
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">加载音频中...</div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground">加载音频中...</div>
+              )}
             </div>
           )}
         </DialogContent>

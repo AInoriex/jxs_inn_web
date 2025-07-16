@@ -135,13 +135,12 @@ export default function InventoryPage() {
   };
 
   // 进度条变化
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Radix Slider 的 value 是数组格式（支持多滑块），这里取第一个值
-    const newValue = parseFloat(e.target.value);
-    if (playerRef.current && !isNaN(newValue)) {
-      setAudioState(prev => ({ ...prev, currentTime: newValue }));
-    }
-  };
+  const handleSeekChange = (value: number[]) => { 
+  const newValue = value[0]; 
+  if (playerRef.current && !isNaN(newValue)) { 
+    playerRef.current.seekTo(newValue);
+  } 
+}; 
 
   // 进度条拖动开始（补充鼠标事件类型）
   const handleSeekStart = (e: React.MouseEvent) => {
@@ -171,9 +170,9 @@ export default function InventoryPage() {
   };
 
   // 音量变化
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setAudioState(prev => ({ ...prev, volume: newVolume, muted: false }));
+  const handleVolumeChange = (value: number[]) => { 
+    const newVolume = value[0]; 
+    setAudioState(prev => ({ ...prev, volume: newVolume, muted: false })); 
   };
 
   // 静音切换
@@ -227,7 +226,7 @@ export default function InventoryPage() {
         ))}
       </div>
 
-      {/* 藏品详情页 */}
+      {/* 藏品详情页 - 音频播放器 */}
       <Dialog open={!!selectedItem} onOpenChange={() => {
         setSelectedItem(null);
         setAudioUrl(null); // 关闭对话框时停止播放
@@ -281,9 +280,9 @@ export default function InventoryPage() {
                         <Slider
                           min={0}
                           max={audioState.duration}
-                          value={[audioState.currentTime]} // 适配 Radix Slider 的数组格式
+                          value={[audioState.currentTime]}
                           onMouseDown={handleSeekStart}
-                          onChange={handleSeekChange}
+                          onValueChange={handleSeekChange}
                           onMouseUp={handleSeekEnd}
                           className="flex-1"
                         />
@@ -310,8 +309,8 @@ export default function InventoryPage() {
                           min={0}
                           max={1}
                           step={0.1}
-                          value={[audioState.volume]} // 适配 Radix Slider 的数组格式
-                          onChange={handleVolumeChange}
+                          value={[audioState.volume]}
+                          onValueChange={handleVolumeChange}
                           className="flex-1"
                         />
                       </div>

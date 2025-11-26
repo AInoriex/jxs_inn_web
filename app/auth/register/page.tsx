@@ -2,13 +2,15 @@
 
 import { sha256 } from 'js-sha256';
 import { Store, Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getRandomBackgroundImage } from '@/lib/asset';
 import { useAuth } from '@/lib/auth';
 
 export default function RegisterPage() {
@@ -22,8 +24,12 @@ export default function RegisterPage() {
   const [countdown, setCountdown] = useState(0); // 邮箱验证码倒计时（防止重复发送）
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState('');
+
+  useEffect(() => {
+    setBackgroundImage(getRandomBackgroundImage());
+  }, []);
 
   // 发送邮箱验证码
   const sendVerifyCode = async () => {
@@ -87,10 +93,24 @@ export default function RegisterPage() {
       {/* 左侧背景部分 */}
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-zinc-900" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <Store className="mr-2 h-6 w-6" />
-          ❤ 欢迎入住江心上客栈 ❤
-        </div>
+        {/* <div className="relative z-20 flex items-center text-lg font-medium">
+          ❤ 欢迎入住 ❤
+        </div> */}
+        <Image
+          src={backgroundImage}
+          alt="背景图"
+          fill
+          className="relative hidden h-full lg:flex dark:border-r bg-cover bg-center"
+          style={{
+            maskImage: 'linear-gradient(to left, transparent 15px, black 200px, black calc(80%), transparent calc(100%))', // 左右5px渐变淡出
+            WebkitMaskImage: 'linear-gradient(to left, transparent 15px, black 200px, black calc(80%), transparent calc(100%))', // 兼容webkit内核
+            maskMode: 'alpha', // 仅显示透明部分
+            objectFit: 'cover',
+          }}
+        />
+        {/* 添加半透明遮罩层（根据图片亮度调整透明度） */}
+        <div className="absolute inset-0 bg-zinc-900 opacity-50" />
+        
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
@@ -106,7 +126,7 @@ export default function RegisterPage() {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">创建账号</h1>
-            <p className="text-sm text-muted-foreground">店小二：客人，入住前请填写下这些信息哦~</p>
+            <p className="text-sm text-muted-foreground">客人，入住前请填写下这些信息哦~</p>
           </div>
 
           {/* 用户名输入 */}
@@ -166,19 +186,12 @@ export default function RegisterPage() {
               <Label htmlFor="password">密码</Label>
               <Input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
               />
-              <button
-                type="button"
-                className="absolute right-3 top-8 text-muted-foreground"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
-              </button>
             </div>
 
             {/* 确认密码输入 */}

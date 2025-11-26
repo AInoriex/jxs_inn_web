@@ -16,16 +16,16 @@ export function Footer() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">贵客可能想看</h3>
+            <h3 className="font-semibold mb-4">贵客可能想知道...</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/aboutme">关于我（施工中...）</Link>
+                <Link href="/aboutme">关于我</Link>
               </li>
               <li>
-                <Link href="/contact">售后咨询（施工中...）</Link>
+                <Link href="/contact">售后咨询</Link>
               </li>
               <li>
-                <Link href="/support">常见问题（施工中...）</Link>
+                <Link href="/support">常见问题</Link>
               </li>
             </ul>
           </div>
